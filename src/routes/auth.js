@@ -8,10 +8,11 @@ const router = express.Router();
 router.post('/signup', [
   body('email').isEmail().withMessage('Invalid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('first_name').notEmpty().withMessage('First name is required'),
-  body('last_name').notEmpty().withMessage('Last name is required'),
-  body('phone_number').notEmpty().withMessage('Last name is required'),
-  // validate
+  body('fname').notEmpty().withMessage('First name is required'),
+  body('lname').notEmpty().withMessage('Last name is required'),
+  body('phone').notEmpty().withMessage('Phone number is required'),
+  body('bvn').notEmpty().withMessage('BVN is required'),
+  body('nin').notEmpty().withMessage('NIN is required'),
 ], authController.signUp);
 
 router.post('/login',[

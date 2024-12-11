@@ -6,7 +6,7 @@ const axios = require('axios');
 
 class AuthService {
   async registerUser(userData) {
-    const { customer_email, password, fname, lname, phone,nin,bvn} = userData;
+    const { email, password, fname, lname, phone,nin,bvn} = userData;
     
     const existingUser = await db('users').where({ email }).first();
     if (existingUser) {
@@ -18,7 +18,7 @@ class AuthService {
 
     return db.transaction(async (trx) => {
       const [userId] = await trx('users').insert({
-        customer_email,
+        customer_email:email,
         password: hashedPassword,
         fname,
         lname,
@@ -31,7 +31,7 @@ class AuthService {
       const walletResponse = await axios.post(
        'https://integrations.getravenbank.com/v1/wallet/create_merchant',
        {
-           customer_email,
+           customer_email: email,
            fname,
            lname,
            phone,
