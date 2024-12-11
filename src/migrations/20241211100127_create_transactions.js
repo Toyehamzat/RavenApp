@@ -1,13 +1,14 @@
 
 exports.up = function(knex) {
-    return knex.schema.createTable('transactions', function(table) {
-        table.uuid('id').primary().unique();
-        table.uuid('user_id').references('id').inTable('users');
-        table.string('type').notNullable(); // deposit, transfer, etc.
-        table.decimal('amount', 10, 2).notNullable();
-        table.string('status').defaultTo('pending');
-        table.string('reference').unique();
-        table.uuid('recipient_id').references('id').inTable('users');
+    return knex.schema.createTable('transactions', (table) => {
+        table.increments('id').primary();
+        table.integer('sender_account_id').unsigned().references('id').inTable('accounts').nullable();
+        table.integer('recipient_account_id').unsigned().references('id').inTable('accounts');
+        table.decimal('amount', 15, 2).notNullable();
+        table.enum('type', ['deposit', 'transfer', 'withdrawal']).notNullable();
+        table.enum('status', ['pending', 'completed', 'failed']).defaultTo('pending');
+        table.string('reference_id').unique().notNullable();
+        table.string('description').nullable();
         table.timestamps(true, true);
       });
 };
