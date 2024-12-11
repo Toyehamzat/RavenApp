@@ -7,8 +7,8 @@ exports.up = function(knex) {
         table.string('lname').notNullable();
         table.string('phone_number').unique();
         table.enum('status', ['active', 'inactive']).defaultTo('active');
-        table.string('nin').unique(); // Adding NIN field
-        table.string('bvn').unique(); // Adding BVN field
+        table.string('nin').unique(); 
+        table.string('bvn').unique(); 
         table.timestamps(true, true);
     });
 };
