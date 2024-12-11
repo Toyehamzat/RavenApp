@@ -1,32 +1,25 @@
 const express = require('express');
-const User = require('../models/user');
+const { body } = require('express-validator');
+const authController = require('../controllers/authController');
+const authMiddleware = require('../middlewares/authMiddleware');
+
 const router = express.Router();
 
-router.post('/signup', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.create(email, password);
-    res.status(201).json({ 
-      message: 'User created successfully', 
-      account_number: user.account_number 
-    });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/signup', [
+  body('email').isEmail().withMessage('Invalid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('first_name').notEmpty().withMessage('First name is required'),
+  body('last_name').notEmpty().withMessage('Last name is required'),
+  body('phone_number').notEmpty().withMessage('Last name is required'),
+  // validate
+], authController.signUp);
 
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const { user, token } = await User.authenticate(email, password);
-    res.json({ 
-      message: 'Login successful', 
-      token, 
-      account_number: user.account_number 
-    });
-  } catch (error) {
-    res.status(401).json({ error: error.message });
-  }
-});
+router.post('/login',[
+  body('email').isEmail().withMessage('Invalid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+
+], authController.signIn)
+
+router.get('/profile',authMiddleware, authController.getProfile);
 
 module.exports = router;
