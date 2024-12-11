@@ -2,11 +2,11 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
-const { generateAccountNumber } = require('../utils/accountUtils');
+const axios = require('axios');
 
 class AuthService {
   async registerUser(userData) {
-    const { email, password, first_name, last_name, phone_number } = userData;
+    const { customer_email, password, fname, lname, phone,nin,bvn} = userData;
     
     const existingUser = await db('users').where({ email }).first();
     if (existingUser) {
@@ -18,25 +18,54 @@ class AuthService {
 
     return db.transaction(async (trx) => {
       const [userId] = await trx('users').insert({
-        email,
+        customer_email,
         password: hashedPassword,
-        first_name,
-        last_name,
-        phone_number
+        fname,
+        lname,
+        phone,
+        bvn,
+        nin
       });
 
-      const accountNumber = generateAccountNumber();
-      await trx('accounts').insert({
-        user_id: userId,
-        account_number: accountNumber
-      });
+       // Create wallet via external API
+      const walletResponse = await axios.post(
+       'https://integrations.getravenbank.com/v1/wallet/create_merchant',
+       {
+           customer_email,
+           fname,
+           lname,
+           phone,
+           bvn,
+           nin,
+       },
+       {
+           headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.LIVE_SECRET_KEY}` 
+           },
+       }
+        );
 
-      return { userId, accountNumber };
+    if (walletResponse.status !== 200) {
+      throw new Error('Failed to create wallet');
+  }
+
+  const { reference, account_number, bank_name, account_name } = walletResponse.data.data;
+
+    // Insert wallet details into the 'wallets' table
+        await trx('wallets').insert({
+            user_id: userId,
+            account_number,
+            bank_name,
+            account_name,
+            reference,
+        });
+        return { userId, accountNumber: account_number, reference };
     });
   }
 
   async loginUser(email, password) {
-    const user = await db('users').where({ email }).first();
+    const user = await db('users').where({ customer_email:email }).first();
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -47,25 +76,25 @@ class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email }, 
+      { id: user.id, customer_email: user.customer_email }, 
       process.env.JWT_SECRET, 
         { expiresIn: '1h' }
     );
 
-    return { token, user: { id: user.id, email: user.email } };
+    return { token, user: { id: user.id, customer_email: user.customer_email } };
   }
 
   async getUserProfile(userId) {
     const user = await db('users')
-      .select('id', 'email', 'first_name', 'last_name', 'phone_number')
+      .select('id', 'customer_email', 'fname', 'lname', 'phone')
       .where({ id: userId })
       .first();
 
-    const account = await db('accounts')
+    const wallet = await db('wallets')
       .where({ user_id: userId })
       .first();
 
-    return { user:{...user},account:{...account} };
+    return { user:{...user},wallet:{...wallet} };
   }
 }
 
