@@ -1,5 +1,5 @@
 // src/services/authService.js
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const { generateAccountNumber } = require('../utils/accountUtils');
@@ -65,7 +65,7 @@ class AuthService {
       .where({ user_id: userId })
       .first();
 
-    return { ...user, account_number: account.account_number, balance: account.balance };
+    return { user:{...user},account:{...account} };
   }
 }
 
