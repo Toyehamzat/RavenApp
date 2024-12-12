@@ -1,4 +1,3 @@
-// src/services/authService.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
@@ -27,7 +26,6 @@ class AuthService {
         nin
       });
 
-       // Create wallet via external API
       const walletResponse = await axios.post(
        'https://integrations.getravenbank.com/v1/wallet/create_merchant',
        {
@@ -51,8 +49,6 @@ class AuthService {
   }
 
   const { reference, account_number, bank_name, account_name } = walletResponse.data.data;
-
-    // Insert wallet details into the 'wallets' table
         await trx('wallets').insert({
             user_id: userId,
             account_number,
